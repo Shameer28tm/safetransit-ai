@@ -70,9 +70,9 @@
         <div id="processing-overlay" style="display: none; margin-top: 20px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-highlight); border-radius: 8px; padding: 20px; text-align: center;">
             <div style="font-size: 1.5rem; margin-bottom: 8px;">⏳</div>
             <h4 style="color: var(--accent-electric); margin-bottom: 6px;">Processing Video Across Full Duration...</h4>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                Executing OpenCV DNN inference, letterboxing, coalescing incident intervals, estimating scene severity, and rendering bounding box evidence.
-            </p>
+            <p id="analysis-stage" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">Scanning video frames, tracking collision candidates, building the annotated output and preparing evidence.</p>
+            <div class="progress-track"><div id="analysis-progress-bar" class="progress-fill"></div></div>
+            <div class="progress-meta"><span id="analysis-progress-label">Preparing analysis…</span><span id="analysis-frame-count">0 frames</span></div>
         </div>
     </div>
 
@@ -89,41 +89,13 @@
             </div>
 
             <div style="background: #000000; border-radius: 8px; overflow: hidden; min-height: 220px; display: flex; align-items: center; justify-content: center;">
-                <video id="client-preview-player" controls style="width: 100%; display: none; max-height: 280px;"></video>
+                <video id="client-preview-player" controls playsinline preload="metadata" style="width: 100%; display: none; max-height: 520px; aspect-ratio: 16 / 9; object-fit: contain;"></video>
                 <div id="preview-placeholder" style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px;">
                     Select or drop a video file on the left to preview playback here before processing.
                 </div>
             </div>
         </div>
 
-        <!-- Pre-Loaded Benchmark Footage Reference -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                    Competition Test Benchmarks
-                </h3>
-                <span class="badge badge-cyan">In Repository</span>
-            </div>
-
-            <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                <p style="margin-bottom: 12px;">The following verified benchmark videos are available inside the project directory for live demonstration to judges:</p>
-                <ul style="padding-left: 20px; margin: 0; display:flex; flex-direction:column; gap:10px;">
-                    <li>
-                        <strong style="color:var(--text-pure);">demo_media/accident_crash_demo.mp4</strong> (or <code>cr.mp4</code>):<br>
-                        <span style="color:var(--text-muted);">Intersection collision with multiple vehicles. Evaluates peak accident detection at 87.4% confidence and major severity.</span>
-                    </li>
-                    <li>
-                        <strong style="color:var(--text-pure);">test2.mp4</strong>:<br>
-                        <span style="color:var(--text-muted);">Night surveillance junction collision with sustained vehicle damage intervals (>82% confidence).</span>
-                    </li>
-                    <li>
-                        <strong style="color:var(--text-pure);">test1.mp4</strong>:<br>
-                        <span style="color:var(--text-muted);">Normal smooth traffic baseline (negative control: confirms 0 false alarms).</span>
-                    </li>
-                </ul>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}
@@ -138,6 +110,9 @@ const fileSize = document.getElementById('selected-file-size');
 const previewPlayer = document.getElementById('client-preview-player');
 const previewPlaceholder = document.getElementById('preview-placeholder');
 const previewBadge = document.getElementById('preview-badge');
+const analysisForm = document.getElementById('upload-form');
+let activePreviewUrl = null;
+let pollTimer = null;
 
 // Drag and drop event handling
 ['dragenter', 'dragover'].forEach(eventName => {
@@ -174,8 +149,10 @@ function handleFileSelect(input) {
         fileBadge.style.display = 'block';
 
         // Load preview
-        const fileUrl = URL.createObjectURL(file);
-        previewPlayer.src = fileUrl;
+        if (activePreviewUrl) URL.revokeObjectURL(activePreviewUrl);
+        activePreviewUrl = URL.createObjectURL(file);
+        previewPlayer.src = activePreviewUrl;
+        previewPlayer.load();
         previewPlayer.style.display = 'block';
         previewPlaceholder.style.display = 'none';
         previewBadge.innerText = 'Loaded';
@@ -187,7 +164,10 @@ function clearSelectedFile() {
     fileInput.value = '';
     fileBadge.style.display = 'none';
     previewPlayer.pause();
-    previewPlayer.src = '';
+    previewPlayer.removeAttribute('src');
+    previewPlayer.load();
+    if (activePreviewUrl) URL.revokeObjectURL(activePreviewUrl);
+    activePreviewUrl = null;
     previewPlayer.style.display = 'none';
     previewPlaceholder.style.display = 'block';
     previewBadge.innerText = 'No Media';
@@ -203,16 +183,59 @@ function updateThresholdLabel(val) {
     document.getElementById('threshold-val').innerText = parseFloat(val).toFixed(2);
 }
 
-function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
+    e.preventDefault();
     if (!fileInput.files || fileInput.files.length === 0) {
         alert("Please select a video file first.");
-        e.preventDefault();
         return false;
     }
-    document.getElementById('btn-analyze').disabled = true;
-    document.getElementById('btn-analyze').innerHTML = `⏳ Analyzing Video Frames...`;
-    document.getElementById('processing-overlay').style.display = 'block';
-    return true;
+    const button = document.getElementById('btn-analyze');
+    const overlay = document.getElementById('processing-overlay');
+    button.disabled = true;
+    button.textContent = 'Uploading footage…';
+    overlay.style.display = 'block';
+    document.getElementById('analysis-stage').textContent = 'Uploading video securely, then analysis will begin.';
+    const formData = new FormData(analysisForm);
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Could not start video analysis.');
+        button.textContent = 'Analysis running…';
+        pollTimer = setInterval(async () => {
+            try {
+                const statusResponse = await fetch('/analysis_status/' + encodeURIComponent(data.task_id), { cache: 'no-store' });
+                const status = await statusResponse.json();
+                document.getElementById('analysis-progress-bar').style.width = (status.progress || 0) + '%';
+                document.getElementById('analysis-progress-label').textContent = (status.progress || 0) + '% complete';
+                document.getElementById('analysis-frame-count').textContent = (status.analyzed_frames || 0) + ' / ' + (status.total_frames || 0) + ' frames';
+                document.getElementById('analysis-stage').textContent = status.stage || 'Analyzing frames…';
+                if (status.state === 'complete') {
+                    clearInterval(pollTimer);
+                    document.getElementById('analysis-progress-bar').style.width = '100%';
+                    document.getElementById('analysis-progress-label').textContent = 'Analysis complete';
+                    window.location.assign(status.report_url);
+                } else if (status.state === 'error') {
+                    clearInterval(pollTimer);
+                    throw new Error(status.error || 'Video analysis failed.');
+                }
+            } catch (err) {
+                if (pollTimer) clearInterval(pollTimer);
+                button.disabled = false;
+                button.textContent = 'Retry Analysis';
+                document.getElementById('analysis-stage').textContent = err.message;
+            }
+        }, 700);
+    } catch (err) {
+        overlay.style.display = 'block';
+        button.disabled = false;
+        button.textContent = 'Start Video Intelligence Analysis';
+        document.getElementById('analysis-stage').textContent = err.message;
+    }
+    return false;
 }
 </script>
 {% endblock %}
