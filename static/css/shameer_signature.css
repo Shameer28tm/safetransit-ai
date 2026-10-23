@@ -660,3 +660,40 @@ body {
 .footer-credits span {
     color: var(--accent-cyan);
 }
+
+
+/* SafeTransit-AI — Professional Light Operations Theme */
+:root {
+  --bg-void:#f4f7fb; --bg-space:#eef3f9; --bg-card:#fff; --bg-card-hover:#f8fbff;
+  --bg-glass:#fff; --bg-input:#fff; --border-subtle:#e2e8f0; --border-card:#d7e0ec;
+  --border-highlight:#2563eb; --border-cyan:#0891b2; --text-pure:#0f172a;
+  --text-primary:#1e293b; --text-secondary:#475569; --text-muted:#64748b;
+  --accent-electric:#2563eb; --accent-blue:#1d4ed8; --accent-cyan:#0891b2;
+  --accent-cyan-glow:rgba(8,145,178,.12); --status-green:#15803d; --warn-amber:#b45309;
+  --alert-red:#b91c1c; --shadow-soft:0 4px 18px rgba(15,23,42,.06); --shadow-glow:0 0 18px rgba(37,99,235,.10);
+}
+body { background:#f4f7fb; color:#1e293b; }
+.site-header { background:rgba(255,255,255,.97); border-bottom:1px solid #dce4ef; box-shadow:0 2px 12px rgba(15,23,42,.04); }
+.brand-name,.page-title,.card-title,.kpi-value,.card strong,.form-label,.data-table td { color:#0f172a; }
+.brand-badge { color:#2563eb; }
+.nav-link { color:#475569; }
+.nav-link:hover,.nav-link.active { color:#1d4ed8; background:#eff6ff; }
+.user-badge { color:#334155; background:#f1f5f9; border-color:#dbe4ef; }
+.card { background:#fff; border-color:#dce4ef; box-shadow:0 4px 18px rgba(15,23,42,.055); backdrop-filter:none; }
+.card:hover { border-color:#b9cbe3; }
+.kpi-label,.kpi-subtext,.page-subtitle { color:#64748b; }
+.kpi-value { text-shadow:none!important; }
+.btn-outline { color:#334155; border:1px solid #cbd5e1; background:#fff; }
+.btn-outline:hover { background:#f1f5f9; color:#1d4ed8; }
+input,select,textarea,.form-control { color:#0f172a!important; background:#fff!important; border:1px solid #cbd5e1!important; }
+.data-table th { background:#f1f5f9; color:#334155; }
+.data-table td { border-color:#e2e8f0; }
+.notice-banner,.disclaimer-banner { padding:16px 18px; border:1px solid #bfdbfe; border-left:4px solid #2563eb; background:#eff6ff; color:#334155; border-radius:10px; line-height:1.6; }
+.notice-banner strong,.disclaimer-banner strong { color:#1d4ed8; }
+.progress-track { height:9px; margin:18px 0 8px; background:#e2e8f0; border-radius:999px; overflow:hidden; }
+.progress-fill { height:100%; width:0; background:linear-gradient(90deg,#2563eb,#06b6d4); transition:width .25s ease; }
+.progress-meta { display:flex; justify-content:space-between; gap:12px; color:#475569; font-size:.78rem; font-family:var(--font-mono); }
+.live-incident-alert { margin:14px 0; padding:14px 18px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; font-weight:800; letter-spacing:.04em; }
+.audio-fallback { margin-top:12px; padding:12px; background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; border-radius:8px; }
+#client-preview-player { width:100%; max-height:65vh; background:#0f172a; }
+@media(max-width:768px){.container{padding:0 14px}.main-content{padding-top:20px}.progress-meta{flex-direction:column}}
