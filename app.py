@@ -133,6 +133,7 @@ def detect_accident(video_source=0):
             live_accident_detected = True
         elif not current_has_accident:
             live_accident_detected = False
+            alert_sent_live = False
         
         for d in detections:
             x1, y1, x2, y2 = d['box']
@@ -514,7 +515,9 @@ def api_incidents():
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    if 'user' in session:
+        return redirect('/home')
+    return redirect('/login')
 
 # --------------------------
 # Error Handlers
