@@ -66,7 +66,8 @@ class VideoAnalyzer:
         video_path: str,
         conf_threshold: float = 0.25,
         target_fps: Optional[int] = 15,
-        trigger_telegram: bool = True
+        trigger_telegram: bool = True,
+        progress_callback=None
     ) -> Dict[str, Any]:
         """
         Analyze the full video, produce annotated video, evidence snapshots, and incident report.
@@ -112,8 +113,11 @@ class VideoAnalyzer:
         job_report_json = job_dir / "incident_report.json"
 
         # Output dimensions (standardized even integers for ffmpeg/mp4v compatibility)
-        out_w = min(1280, max(640, frame_w))
-        out_h = int(out_w * (frame_h / frame_w)) if frame_w > 0 else 500
+        # Preserve source detail; only correct odd dimensions for MP4 compatibility.
+        out_w = frame_w if frame_w > 0 else 1280
+        out_h = frame_h if frame_h > 0 else 720
+        out_w = out_w if out_w % 2 == 0 else out_w - 1
+        out_h = out_h if out_h % 2 == 0 else out_h - 1
         out_w = out_w if out_w % 2 == 0 else out_w - 1
         out_h = out_h if out_h % 2 == 0 else out_h - 1
 
@@ -147,6 +151,11 @@ class VideoAnalyzer:
                 continue
 
             analyzed_count += 1
+            if progress_callback:
+                try:
+                    progress_callback({"progress": min(99, int((frame_idx + 1) / max(1, total_frames) * 100)), "analyzed_frames": analyzed_count, "total_frames": total_frames, "stage": f"Analyzing frame {frame_idx + 1} of {total_frames}…"})
+                except Exception:
+                    pass
             timestamp_sec = frame_idx / orig_fps
             timestamp_str = f"{int(timestamp_sec // 60):02d}:{timestamp_sec % 60:05.2f}"
 
@@ -266,6 +275,23 @@ class VideoAnalyzer:
 
         cap.release()
         out.release()
+        if progress_callback:
+            try:
+                progress_callback({"progress": 99, "analyzed_frames": analyzed_count, "total_frames": total_frames, "stage": "Finalizing annotated video and incident evidence…"})
+            except Exception:
+                pass
+        # Browser playback is most reliable with H.264/yuv420p. Re-encode if FFmpeg exists.
+        try:
+            import subprocess
+            import shutil as _shutil
+            ffmpeg = _shutil.which("ffmpeg")
+            if ffmpeg and job_video_output.exists() and job_video_output.stat().st_size > 0:
+                temp_h264 = job_dir / "processed_video_h264.mp4"
+                proc = subprocess.run([ffmpeg, "-y", "-i", str(job_video_output), "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", str(temp_h264)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=180)
+                if proc.returncode == 0 and temp_h264.exists() and temp_h264.stat().st_size > 0:
+                    temp_h264.replace(job_video_output)
+        except Exception as encode_error:
+            print(f"[VideoAnalyzer] H.264 optimization skipped: {encode_error}", flush=True)
 
         # Finalize any pending incident
         if current_incident is not None:
@@ -332,6 +358,11 @@ class VideoAnalyzer:
             print(f"[VideoAnalyzer] Failed to update latest pointer: {e}")
 
         print(f"[VideoAnalyzer] Job {job_id} complete. Detected {len(incidents)} incident(s).", flush=True)
+        if progress_callback:
+            try:
+                progress_callback({"progress": 100, "analyzed_frames": analyzed_count, "total_frames": total_frames, "stage": "Analysis complete"})
+            except Exception:
+                pass
         return report
 
     def _finalize_incident(
