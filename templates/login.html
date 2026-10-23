@@ -1,18 +1,43 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body style="background-image: url('/static/images/background.jpg');">
-    <div class="form-box">
-        <h2>Login</h2>
-        <form method="POST">
-            <input type="text" name="username" placeholder="Username" required><br>
-            <input type="password" name="password" placeholder="Password" required><br>
-            <button type="submit">Login</button>
+{% extends "base.html" %}
+
+{% block title %}Sign In — SafeTransit-AI Command Center{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 40px auto;">
+    <div class="card" style="padding: 36px 32px; border-top: 3px solid var(--accent-electric);">
+        <div style="text-align: center; margin-bottom: 28px;">
+            <div class="brand-icon" style="margin: 0 auto 14px auto; width: 44px; height: 44px;">
+                <svg viewBox="0 0 24 24" style="width: 26px; height: 26px;">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <h2 style="color: var(--text-pure); font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em;">Operator Authentication</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Sign in to access SafeTransit-AI road safety telemetry.</p>
+        </div>
+
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label class="form-label" for="username">Operator Username</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="e.g. operator" required autocomplete="username">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 0.95rem;">
+                Authenticate & Enter Command Center
+            </button>
         </form>
-        <p>Don't have an account? <a href="/register">Register</a></p>
+
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
+            New operator? <a href="/register" style="color: var(--accent-electric); text-decoration: none; font-weight: 600;">Register an Account</a>
+        </div>
+
+        <div style="margin-top: 16px; background: rgba(15, 23, 42, 0.5); padding: 10px 14px; border-radius: 6px; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+            💡 Demo Account: <code>operator</code> &bull; Password: <code>admin123</code>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

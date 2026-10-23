@@ -1,57 +1,59 @@
 {
   "success": true,
+  "job_id": "job_1792796310_27cf48",
   "video_metadata": {
     "source_path": "cr.mp4",
     "duration_seconds": 13.15,
     "total_frames": 394,
-    "analyzed_frames": 197,
+    "analyzed_frames": 394,
     "fps": 29.97,
     "resolution": "1920x1080",
-    "processed_video_path": "static/processed_video.mp4"
+    "processed_video_path": "/static/reports/job_1792796310_27cf48/processed_video.mp4"
   },
   "detector_backend": "opencv_dnn",
+  "confidence_threshold": 0.3,
   "incidents_count": 2,
   "incidents": [
     {
       "incident_id": "inc_1_0",
-      "start_time": "00:00.9",
-      "end_time": "00:03.3",
-      "start_sec": 0.93,
-      "end_sec": 3.27,
-      "duration_seconds": 2.34,
+      "start_time": "00:00.90",
+      "end_time": "00:03.30",
+      "start_sec": 0.9,
+      "end_sec": 3.3,
+      "duration_seconds": 2.4,
       "peak_severity": "MAJOR",
       "peak_confidence": 0.874,
-      "frame_detections": 25,
-      "snapshot_url": "/static/evidence/inc_1_0.jpg",
+      "frame_detections": 52,
+      "snapshot_url": "/static/reports/job_1792796310_27cf48/evidence/inc_1_0.jpg",
       "severity_details": {
         "label": "major",
         "display_label": "MAJOR",
         "model_backed": true,
         "probabilities": {
-          "fatal": 0.11,
-          "major": 0.56,
-          "minor": 0.33
+          "fatal": 0.13,
+          "major": 0.83,
+          "minor": 0.04
         },
         "disclaimer": "Estimated scene severity rating derived from computer vision metrics (vehicle count, confidence, collision bounding area). This is an operational situational indicator, NOT a confirmed medical or clinical injury diagnosis.",
         "features": {
           "num_detections": 3,
-          "avg_confidence": 0.829,
-          "avg_bbox_area": 165473.0,
+          "avg_confidence": 0.382,
+          "avg_bbox_area": 166425.0,
           "class_id": 1
         }
       }
     },
     {
       "incident_id": "inc_2_6",
-      "start_time": "00:06.1",
-      "end_time": "00:13.1",
+      "start_time": "00:06.14",
+      "end_time": "00:13.08",
       "start_sec": 6.14,
       "end_sec": 13.08,
       "duration_seconds": 6.94,
       "peak_severity": "MAJOR",
-      "peak_confidence": 0.8562,
-      "frame_detections": 75,
-      "snapshot_url": "/static/evidence/inc_2_6.jpg",
+      "peak_confidence": 0.8615,
+      "frame_detections": 149,
+      "snapshot_url": "/static/reports/job_1792796310_27cf48/evidence/inc_2_6.jpg",
       "severity_details": {
         "label": "major",
         "display_label": "MAJOR",
@@ -71,7 +73,12 @@
       }
     }
   ],
-  "telegram_status": "No critical accident detected",
+  "severity_distribution": {
+    "fatal": 0,
+    "major": 2,
+    "minor": 0
+  },
+  "telegram_status": "No accident detected in video stream.",
   "disclaimer": "Estimated scene severity rating derived from computer vision metrics (vehicle count, confidence, collision bounding area). This is an operational situational indicator, NOT a confirmed medical or clinical injury diagnosis.",
-  "analyzed_at": "2026-10-24 03:18:34"
+  "analyzed_at": "2026-10-24 04:29:43"
 }

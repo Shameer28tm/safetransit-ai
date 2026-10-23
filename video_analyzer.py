@@ -2,6 +2,8 @@ import os
 import cv2
 import json
 import time
+import uuid
+import shutil
 import numpy as np
 from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
@@ -14,30 +16,35 @@ SEVERITY_ORDER = {"fatal": 3, "major": 2, "minor": 1, "low": 1, "medium": 2, "hi
 
 class VideoAnalyzer:
     """
-    Complete, end-to-end video accident analysis engine for SafeTransit-AI.
+    Production-grade end-to-end video accident analysis engine for SafeTransit-AI.
     
     Features:
-    - File validation (format, size, codec openability)
-    - Full-duration multi-frame analysis
-    - Temporal incident coalescing (avoids duplicate alerts/records for continuing events)
-    - Scene severity estimation with verified 4-feature schema
-    - Automatic evidence snapshots saved to static/evidence/
-    - Browser-compatible annotated video export (no GUI dependencies)
-    - Structured JSON report export
+    - Per-upload job isolation (static/reports/<job_id>/) preventing cross-job data overwrites
+    - File validation (container format, codec, file size)
+    - Full-duration multi-frame scanning
+    - User-configurable detection confidence threshold (defaults to 0.25)
+    - Temporal incident coalescing (groups continuing detections within 2.5s into cohesive events)
+    - Automated photographic evidence snapshot capture
+    - Headless OpenCV VideoWriter web-compatible MP4 encoding (no GUI dependencies)
+    - Structured JSON report export and persistence
+    - Synchronization with latest incident report pointer
     """
 
     ALLOWED_EXTENSIONS = {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
 
     def __init__(
         self,
-        evidence_dir: str = "static/evidence",
-        output_video_path: str = "static/processed_video.mp4",
-        report_json_path: str = "static/incident_report.json"
+        reports_base_dir: str = "static/reports",
+        latest_report_json: str = "static/incident_report.json",
+        latest_video_path: str = "static/processed_video.mp4",
+        legacy_evidence_dir: str = "static/evidence"
     ):
-        self.evidence_dir = Path(evidence_dir)
-        self.evidence_dir.mkdir(parents=True, exist_ok=True)
-        self.output_video_path = output_video_path
-        self.report_json_path = report_json_path
+        self.reports_base_dir = Path(reports_base_dir)
+        self.reports_base_dir.mkdir(parents=True, exist_ok=True)
+        self.latest_report_json = latest_report_json
+        self.latest_video_path = latest_video_path
+        self.legacy_evidence_dir = Path(legacy_evidence_dir)
+        self.legacy_evidence_dir.mkdir(parents=True, exist_ok=True)
 
     def validate_file(self, file_path: str) -> Tuple[bool, str]:
         """Validate existence, extension, and non-empty size."""
@@ -57,8 +64,8 @@ class VideoAnalyzer:
     def analyze_video(
         self,
         video_path: str,
-        conf_threshold: float = 0.35,
-        target_fps: int = 15,
+        conf_threshold: float = 0.25,
+        target_fps: Optional[int] = 15,
         trigger_telegram: bool = True
     ) -> Dict[str, Any]:
         """
@@ -95,42 +102,53 @@ class VideoAnalyzer:
         frame_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        # Target dimensions for output video
+        # Create isolated job directory
+        job_id = f"job_{int(time.time())}_{uuid.uuid4().hex[:6]}"
+        job_dir = self.reports_base_dir / job_id
+        job_evidence_dir = job_dir / "evidence"
+        job_evidence_dir.mkdir(parents=True, exist_ok=True)
+        
+        job_video_output = job_dir / "processed_video.mp4"
+        job_report_json = job_dir / "incident_report.json"
+
+        # Output dimensions (standardized even integers for ffmpeg/mp4v compatibility)
         out_w = min(1280, max(640, frame_w))
         out_h = int(out_w * (frame_h / frame_w)) if frame_w > 0 else 500
-        # Ensure dimensions are even numbers for encoder
         out_w = out_w if out_w % 2 == 0 else out_w - 1
         out_h = out_h if out_h % 2 == 0 else out_h - 1
 
-        # Frame step for analysis performance
-        step = max(1, int(round(orig_fps / target_fps)))
+        # Determine frame sampling step
+        # If video is short (< 30s), analyze EVERY frame for maximum detection fidelity
+        if video_duration_sec <= 30.0 or target_fps is None or target_fps <= 0:
+            step = 1
+        else:
+            step = max(1, int(round(orig_fps / target_fps)))
 
-        # Setup VideoWriter - try mp4v or avc1
+        # Setup VideoWriter - try mp4v
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out_fps = orig_fps / step
-        out = cv2.VideoWriter(self.output_video_path, fourcc, out_fps, (out_w, out_h))
+        out = cv2.VideoWriter(str(job_video_output), fourcc, out_fps, (out_w, out_h))
 
-        raw_detections_timeline = []
         current_incident = None
         incidents = []
         frame_idx = 0
         analyzed_count = 0
-        telegram_alert_result = "No critical accident detected"
+        telegram_alert_result = "No accident detected in video stream."
 
-        print(f"[VideoAnalyzer] Starting analysis of {video_path}: {total_frames} frames, {video_duration_sec:.1f}s duration.")
+        print(f"[VideoAnalyzer] Job {job_id}: Analyzing {video_path} ({total_frames} frames, {video_duration_sec:.1f}s, thresh={conf_threshold}, step={step})", flush=True)
 
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
 
-            if frame_idx % step != 0:
+            if step > 1 and frame_idx % step != 0:
                 frame_idx += 1
                 continue
 
             analyzed_count += 1
             timestamp_sec = frame_idx / orig_fps
-            timestamp_str = f"{int(timestamp_sec // 60):02d}:{timestamp_sec % 60:04.1f}"
+            timestamp_str = f"{int(timestamp_sec // 60):02d}:{timestamp_sec % 60:05.2f}"
 
             # Run detection
             detections = detector.detect(frame, conf_threshold=conf_threshold)
@@ -175,25 +193,26 @@ class VideoAnalyzer:
 
                 cv2.rectangle(annotated_frame, (x1_scaled, y1_scaled), (x2_scaled, y2_scaled), color, thickness)
                 
-                badge_text = f"{d['label']} {d['confidence']*100:.0f}%"
+                badge_text = f"{d['label'].upper()} {d['confidence']*100:.1f}%"
                 if is_acc and frame_severity_label != "none":
                     badge_text += f" [{frame_severity_label.upper()}]"
 
                 # Label background badge
                 (tw, th), _ = cv2.getTextSize(badge_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-                cv2.rectangle(annotated_frame, (x1_scaled, max(0, y1_scaled - 20)), (x1_scaled + tw + 6, max(0, y1_scaled)), color, -1)
-                cv2.putText(annotated_frame, badge_text, (x1_scaled + 3, max(14, y1_scaled - 5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.rectangle(annotated_frame, (x1_scaled, max(0, y1_scaled - 22)), (x1_scaled + tw + 6, max(0, y1_scaled)), color, -1)
+                cv2.putText(annotated_frame, badge_text, (x1_scaled + 3, max(15, y1_scaled - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
-            # Draw Timestamp & Status HUD
-            hud_text = f"Time: {timestamp_str} | Active Backend: {detector.backend}"
-            cv2.putText(annotated_frame, hud_text, (15, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2, cv2.LINE_AA)
+            # Draw HUD
+            hud_text = f"SafeTransit-AI | Time: {timestamp_str} | Threshold: {conf_threshold}"
+            cv2.rectangle(annotated_frame, (10, 8), (len(hud_text) * 12 + 20, 36), (15, 23, 42), -1)
+            cv2.putText(annotated_frame, hud_text, (15, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (56, 189, 248), 1, cv2.LINE_AA)
 
             # Temporal incident tracking & coalescing
             if frame_has_accident:
                 peak_conf = max(d['confidence'] for d in accident_dets)
 
                 if current_incident is None:
-                    # Start a new incident
+                    # Start new incident
                     inc_id = f"inc_{len(incidents) + 1}_{int(timestamp_sec)}"
                     current_incident = {
                         "id": inc_id,
@@ -209,14 +228,13 @@ class VideoAnalyzer:
                         "detections_count": len(accident_dets)
                     }
                 else:
-                    # Check gap between detections: if <= 2.5s, group into same incident
+                    # Check gap: if <= 2.5s, group into same incident
                     gap = timestamp_sec - current_incident["end_sec"]
                     if gap <= 2.5:
                         current_incident["end_sec"] = timestamp_sec
                         current_incident["end_str"] = timestamp_str
                         current_incident["frame_count"] += 1
                         
-                        # Update peak confidence & severity
                         if peak_conf > current_incident["peak_confidence"]:
                             current_incident["peak_confidence"] = round(peak_conf, 4)
                             current_incident["best_frame"] = annotated_frame.copy()
@@ -227,9 +245,7 @@ class VideoAnalyzer:
                             current_incident["peak_severity"] = frame_severity_label
                             current_incident["severity_info"] = frame_severity_info
                     else:
-                        # Finalize previous incident
-                        self._finalize_incident(current_incident, incidents)
-                        # Start new incident
+                        self._finalize_incident(current_incident, incidents, job_evidence_dir, job_id)
                         inc_id = f"inc_{len(incidents) + 1}_{int(timestamp_sec)}"
                         current_incident = {
                             "id": inc_id,
@@ -253,22 +269,32 @@ class VideoAnalyzer:
 
         # Finalize any pending incident
         if current_incident is not None:
-            self._finalize_incident(current_incident, incidents)
+            self._finalize_incident(current_incident, incidents, job_evidence_dir, job_id)
 
-        # Trigger single Telegram alert for the most significant incident if requested
+        # Trigger Telegram alert if requested and incident exists
         if incidents and trigger_telegram:
             highest_inc = max(incidents, key=lambda x: (SEVERITY_ORDER.get(x["peak_severity"], 0), x["peak_confidence"]))
             success, msg = notifier.send_incident_alert(
                 severity=highest_inc["peak_severity"],
-                timestamp_str=f"{highest_inc['start_str']} - {highest_inc['end_str']}",
+                timestamp_str=f"{highest_inc['start_time']} - {highest_inc['end_time']}",
                 confidence=highest_inc["peak_confidence"]
             )
             telegram_alert_result = msg
         elif not incidents:
             telegram_alert_result = "No accident detected in video stream."
 
+        # Severity breakdown distribution
+        severity_dist = {"fatal": 0, "major": 0, "minor": 0}
+        for inc in incidents:
+            s_label = inc.get("peak_severity", "minor").lower()
+            if s_label in severity_dist:
+                severity_dist[s_label] += 1
+
+        rel_job_video_path = f"/static/reports/{job_id}/processed_video.mp4"
+
         report = {
             "success": True,
+            "job_id": job_id,
             "video_metadata": {
                 "source_path": video_path,
                 "duration_seconds": round(video_duration_sec, 2),
@@ -276,36 +302,59 @@ class VideoAnalyzer:
                 "analyzed_frames": analyzed_count,
                 "fps": round(orig_fps, 2),
                 "resolution": f"{frame_w}x{frame_h}",
-                "processed_video_path": self.output_video_path
+                "processed_video_path": rel_job_video_path
             },
             "detector_backend": detector.backend,
+            "confidence_threshold": conf_threshold,
             "incidents_count": len(incidents),
             "incidents": incidents,
+            "severity_distribution": severity_dist,
             "telegram_status": telegram_alert_result,
             "disclaimer": severity_classifier.DISCLAIMER,
             "analyzed_at": time.strftime("%Y-%m-%d %H:%M:%S")
         }
 
-        # Save structured report
+        # Save isolated job report
         try:
-            with open(self.report_json_path, "w", encoding="utf-8") as f:
+            with open(job_report_json, "w", encoding="utf-8") as f:
                 json.dump(report, f, indent=2)
         except Exception as e:
-            print(f"[VideoAnalyzer] Failed to save {self.report_json_path}: {e}")
+            print(f"[VideoAnalyzer] Failed to save {job_report_json}: {e}")
 
-        print(f"[VideoAnalyzer] Completed. Found {len(incidents)} distinct incident interval(s).")
+        # Update latest pointer files for backward-compatibility with dashboard & existing routes
+        try:
+            with open(self.latest_report_json, "w", encoding="utf-8") as f:
+                json.dump(report, f, indent=2)
+            # Copy processed video to latest pointer
+            if os.path.exists(str(job_video_output)):
+                shutil.copyfile(str(job_video_output), self.latest_video_path)
+        except Exception as e:
+            print(f"[VideoAnalyzer] Failed to update latest pointer: {e}")
+
+        print(f"[VideoAnalyzer] Job {job_id} complete. Detected {len(incidents)} incident(s).", flush=True)
         return report
 
-    def _finalize_incident(self, inc: Dict[str, Any], incidents_list: List[Dict[str, Any]]):
-        """Save evidence snapshot and append incident summary."""
+    def _finalize_incident(
+        self,
+        inc: Dict[str, Any],
+        incidents_list: List[Dict[str, Any]],
+        job_evidence_dir: Path,
+        job_id: str
+    ):
+        """Save evidence snapshot in both job evidence folder and legacy evidence folder."""
         inc_id = inc["id"]
         snapshot_filename = f"{inc_id}.jpg"
-        snapshot_disk_path = self.evidence_dir / snapshot_filename
-        snapshot_rel_url = f"/static/evidence/{snapshot_filename}"
+        
+        job_snapshot_path = job_evidence_dir / snapshot_filename
+        legacy_snapshot_path = self.legacy_evidence_dir / snapshot_filename
+        
+        rel_snapshot_url = f"/static/reports/{job_id}/evidence/{snapshot_filename}"
 
         if inc.get("best_frame") is not None:
             try:
-                cv2.imwrite(str(snapshot_disk_path), inc["best_frame"])
+                cv2.imwrite(str(job_snapshot_path), inc["best_frame"])
+                # Also save to legacy folder for direct /static/evidence access
+                cv2.imwrite(str(legacy_snapshot_path), inc["best_frame"])
             except Exception as e:
                 print(f"[VideoAnalyzer] Failed to write evidence frame: {e}")
 
@@ -320,7 +369,7 @@ class VideoAnalyzer:
             "peak_severity": inc["peak_severity"].upper(),
             "peak_confidence": inc["peak_confidence"],
             "frame_detections": inc["frame_count"],
-            "snapshot_url": snapshot_rel_url,
+            "snapshot_url": rel_snapshot_url,
             "severity_details": inc.get("severity_info", {})
         }
         incidents_list.append(final_record)

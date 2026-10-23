@@ -1,18 +1,39 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body style="background-image: url('/static/images/background.jpg');">
-    <div class="form-box">
-        <h2>Register</h2>
-        <form method="POST">
-            <input type="text" name="username" placeholder="Username" required><br>
-            <input type="password" name="password" placeholder="Password" required><br>
-            <button type="submit">Register</button>
+{% extends "base.html" %}
+
+{% block title %}Register Operator — SafeTransit-AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 40px auto;">
+    <div class="card" style="padding: 36px 32px; border-top: 3px solid var(--accent-cyan);">
+        <div style="text-align: center; margin-bottom: 28px;">
+            <div class="brand-icon" style="margin: 0 auto 14px auto; width: 44px; height: 44px; background: linear-gradient(135deg, #0891b2, #0284c7);">
+                <svg viewBox="0 0 24 24" style="width: 26px; height: 26px;">
+                    <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M8.5 3a4 4 0 100 8 4 4 0 000-8zM20 8v6M23 11h-6"/>
+                </svg>
+            </div>
+            <h2 style="color: var(--text-pure); font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em;">Register Operator</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Create local credentials to manage SafeTransit-AI monitoring.</p>
+        </div>
+
+        <form method="POST" action="/register">
+            <div class="form-group">
+                <label class="form-label" for="username">Operator Username</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username" required autocomplete="username">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Choose a secure password" required autocomplete="new-password">
+            </div>
+
+            <button type="submit" class="btn btn-cyan" style="width: 100%; padding: 12px; font-size: 0.95rem;">
+                Create Account & Return to Sign In
+            </button>
         </form>
-        <p>Already have an account? <a href="/login">Login</a></p>
+
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
+            Already registered? <a href="/login" style="color: var(--accent-cyan); text-decoration: none; font-weight: 600;">Sign In Here</a>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

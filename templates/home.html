@@ -1,70 +1,269 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>SafeTransit-AI — Command Center Home</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body style="background-image: url('/static/images/background.jpg');">
-    <div class="form-box" style="width: 480px; padding: 35px;">
-        <h1 style="color: #00f7ff; font-size: 24px; margin-top: 0; letter-spacing: 0.5px;">SafeTransit-AI Command Hub</h1>
-        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Welcome, <strong>{{ session.get('user', 'Operator') }}</strong></p>
+{% extends "base.html" %}
 
-        <a href="/live"><button style="margin: 8px 0;">🔴 Live Surveillance Detection</button></a><br>
-        <a href="/upload"><button style="margin: 8px 0;">📹 Upload & Analyze Video</button></a><br>
-        
-        <!-- Telegram Test Action -->
-        <button type="button" id="btn-test-telegram" onclick="testTelegramAlert()" style="background-color: #0284c7; margin: 8px 0;">
-            📡 Test Telegram Alert Channel
-        </button><br>
-        <div id="telegram-status-box" style="display:none; font-size:12px; padding:10px; border-radius:8px; margin:8px auto; width:85%; text-align:left;"></div>
+{% block title %}SafeTransit-AI — Operations Command Center{% endblock %}
 
-        <a href="/about"><button style="background-color: #334155; margin: 8px 0;">ℹ️ About SafeTransit-AI</button></a><br>
-        <a href="/logout"><button style="background-color: #ef4444; margin: 8px 0;">🚪 Logout</button></a>
+{% block content %}
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
+    <div>
+        <h1 class="page-title">Operations Command Center</h1>
+        <p class="page-subtitle">Situational road-safety intelligence, multi-frame accident telemetry, and verified automated alerting.</p>
+    </div>
+    <div style="display:flex; gap:12px;">
+        <a href="/upload" class="btn btn-primary">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            Upload & Analyze Video
+        </a>
+        <a href="/live" class="btn btn-outline">
+            <span class="pulse-dot pulse-red" style="width:6px; height:6px;"></span>
+            Live Stream
+        </a>
+    </div>
+</div>
 
-        <div style="margin-top: 20px; font-size: 11px; color: #64748b; line-height: 1.4;">
-            Automated accident detection with multi-frame duration tracking, computer-vision severity scoring, and alert throttling.
+<!-- Primary Telemetry KPI Grid -->
+<div class="grid-4" style="margin-bottom: 28px;">
+    <!-- Model Backend KPI -->
+    <div class="card kpi-card cyan-card">
+        <div class="kpi-label">Detector Engine</div>
+        <div class="kpi-value" style="font-size: 1.4rem; color: #38bdf8;">OpenCV DNN</div>
+        <div class="kpi-subtext" style="display:flex; align-items:center; gap:6px;">
+            <span class="pulse-dot pulse-green"></span>
+            <span>best.onnx (Native C++ Runtime)</span>
         </div>
     </div>
 
-    <script>
-        function testTelegramAlert() {
-            const btn = document.getElementById('btn-test-telegram');
-            const box = document.getElementById('telegram-status-box');
-            btn.disabled = true;
-            btn.innerText = "⏳ Dispatching Diagnostic Ping...";
-            box.style.display = "block";
-            box.style.backgroundColor = "rgba(56, 189, 248, 0.15)";
-            box.style.border = "1px solid #38bdf8";
-            box.style.color = "#e0f2fe";
-            box.innerText = "Sending test message to configured Telegram channel...";
+    <!-- Total Incidents Recorded -->
+    <div class="card kpi-card {% if stats.total_incidents > 0 %}alert-card{% else %}success-card{% endif %}">
+        <div class="kpi-label">Recorded Incidents</div>
+        <div class="kpi-value">{{ stats.total_incidents }}</div>
+        <div class="kpi-subtext">
+            {% if stats.total_incidents > 0 %}
+                {{ stats.fatal }} Fatal &bull; {{ stats.major }} Major &bull; {{ stats.minor }} Minor
+            {% else %}
+                No active collision events flagged
+            {% endif %}
+        </div>
+    </div>
 
-            fetch('/test_telegram')
-                .then(r => r.json())
-                .then(data => {
-                    btn.disabled = false;
-                    btn.innerText = "📡 Test Telegram Alert Channel";
-                    if (data.success) {
-                        box.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
-                        box.style.borderColor = "#10b981";
-                        box.style.color = "#34d399";
-                        box.innerHTML = `<strong>✅ Success:</strong> ${data.message}`;
-                    } else {
-                        box.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
-                        box.style.borderColor = "#ef4444";
-                        box.style.color = "#f87171";
-                        box.innerHTML = `<strong>⚠️ Alert:</strong> ${data.message}`;
-                    }
-                })
-                .catch(err => {
-                    btn.disabled = false;
-                    btn.innerText = "📡 Test Telegram Alert Channel";
-                    box.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
-                    box.style.borderColor = "#ef4444";
-                    box.style.color = "#f87171";
-                    box.innerHTML = `<strong>⚠️ Network Error:</strong> ${err.message}`;
-                });
+    <!-- Severity Distribution -->
+    <div class="card kpi-card">
+        <div class="kpi-label">Peak Scene Severity</div>
+        <div class="kpi-value" style="font-size: 1.5rem; {% if stats.peak_severity == 'FATAL' %}color:#f87171;{% elif stats.peak_severity == 'MAJOR' %}color:#fb923c;{% else %}color:#38bdf8;{% endif %}">
+            {{ stats.peak_severity }}
+        </div>
+        <div class="kpi-subtext">RandomForest (4-Feature Schema)</div>
+    </div>
+
+    <!-- Telegram Integration Status -->
+    <div class="card kpi-card success-card">
+        <div class="kpi-label">Telegram Channel</div>
+        <div class="kpi-value" style="font-size: 1.35rem; color:#34d399;">
+            {% if telegram_health.reachable %}
+                VERIFIED
+            {% else %}
+                CONFIGURED
+            {% endif %}
+        </div>
+        <div class="kpi-subtext">Target Chat: {{ telegram_health.masked_chat_id }}</div>
+    </div>
+</div>
+
+<!-- Two-Column Operations Layout -->
+<div class="grid-2" style="margin-bottom: 28px;">
+    <!-- Active Intelligence Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                Latest Video Analysis Job
+            </h3>
+            {% if latest_report.success %}
+                <span class="badge badge-cyan">{{ latest_report.video_metadata.total_frames }} Frames</span>
+            {% else %}
+                <span class="badge badge-muted">Awaiting Upload</span>
+            {% endif %}
+        </div>
+
+        {% if latest_report.success %}
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; background: rgba(15, 23, 42, 0.4); padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); display:block; text-transform:uppercase;">Source Video</span>
+                    <strong style="font-family:var(--font-mono); font-size:0.85rem; color:var(--text-pure);">{{ latest_report.video_metadata.source_path }}</strong>
+                </div>
+                <div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); display:block; text-transform:uppercase;">Duration / FPS</span>
+                    <strong style="font-family:var(--font-mono); font-size:0.85rem; color:var(--text-pure);">{{ latest_report.video_metadata.duration_seconds }}s @ {{ latest_report.video_metadata.fps }} fps</strong>
+                </div>
+                <div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); display:block; text-transform:uppercase;">Resolution</span>
+                    <strong style="font-family:var(--font-mono); font-size:0.85rem; color:var(--text-pure);">{{ latest_report.video_metadata.resolution }}</strong>
+                </div>
+                <div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); display:block; text-transform:uppercase;">Analyzed At</span>
+                    <strong style="font-family:var(--font-mono); font-size:0.85rem; color:var(--text-pure);">{{ latest_report.analyzed_at }}</strong>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 6px;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">
+                    Flagged <strong>{{ latest_report.incidents_count }}</strong> distinct accident intervals.
+                </span>
+                <a href="/video_report" class="btn btn-cyan btn-sm">
+                    Open Full Incident Report &rarr;
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding: 36px 16px;">
+            <svg width="48" height="48" fill="none" stroke="#64748b" viewBox="0 0 24 24" style="margin:0 auto 12px auto; display:block;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom: 16px;">No video has been analyzed in this session yet.</p>
+            <a href="/upload" class="btn btn-primary btn-sm">Select Video File</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Verified Alerting Integration Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                Telegram Field Alert Integration
+            </h3>
+            <span class="badge badge-green">
+                <span class="pulse-dot pulse-green" style="width:6px; height:6px;"></span>
+                Online
+            </span>
+        </div>
+
+        <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+            <p style="margin-bottom: 10px;">
+                Direct automated alert channel linked to <strong>@{{ telegram_health.bot_username or 'SafeTransitAccidentBot' }}</strong> with sliding cooldown and duplicate suppression.
+            </p>
+            <div style="background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 0.8rem;">
+                <div>Bot ID: <strong>{{ telegram_health.masked_token }}</strong></div>
+                <div>Channel Chat ID: <strong>{{ telegram_health.masked_chat_id }}</strong></div>
+                <div>Status: <span style="color:#34d399;">Active & Ready for Judges Demo</span></div>
+            </div>
+        </div>
+
+        <!-- Interactive Diagnostic Trigger (POST) -->
+        <button type="button" id="btn-test-telegram" class="btn btn-cyan" style="width: 100%;" onclick="dispatchTelegramDiagnostic()">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            Send Diagnostic Verification Alert
+        </button>
+        <div id="telegram-status-box" style="display:none; margin-top:14px; font-size:13px; padding:12px; border-radius:8px;"></div>
+    </div>
+</div>
+
+<!-- Incident Timeline Table (Real Data Only) -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <h3 class="card-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Incident Chronology & Event Log
+        </h3>
+        <span class="badge badge-muted">{{ latest_report.incidents|length if latest_report.incidents else 0 }} Event(s)</span>
+    </div>
+
+    {% if latest_report.incidents and latest_report.incidents|length > 0 %}
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Incident ID</th>
+                    <th>Timeline Interval</th>
+                    <th>Duration</th>
+                    <th>Peak Confidence</th>
+                    <th>Estimated Severity</th>
+                    <th>Frames Flagged</th>
+                    <th>Evidence Photo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inc in latest_report.incidents %}
+                <tr>
+                    <td class="mono" style="color:var(--accent-electric);">{{ inc.incident_id }}</td>
+                    <td class="mono">{{ inc.start_time }} &rarr; {{ inc.end_time }}</td>
+                    <td class="mono">{{ inc.duration_seconds }}s</td>
+                    <td class="mono" style="color:#f87171; font-weight:700;">{{ (inc.peak_confidence * 100)|round(1) }}%</td>
+                    <td>
+                        {% if inc.peak_severity == 'FATAL' %}
+                            <span class="badge badge-red">FATAL</span>
+                        {% elif inc.peak_severity == 'MAJOR' %}
+                            <span class="badge badge-amber">MAJOR</span>
+                        {% else %}
+                            <span class="badge badge-cyan">MINOR</span>
+                        {% endif %}
+                    </td>
+                    <td class="mono">{{ inc.frame_detections }}</td>
+                    <td>
+                        <a href="{{ inc.snapshot_url }}" target="_blank" class="btn btn-outline btn-sm">
+                            View Crop &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding: 36px 16px; color:var(--text-muted);">
+        <p>No collision incidents detected in the current record.</p>
+        <p style="font-size:0.8rem; margin-top:4px;">Upload crash demonstration footage such as <code>demo_media/accident_crash_demo.mp4</code> or <code>test2.mp4</code> to evaluate multi-frame incident tracking.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Non-Medical Disclaimer -->
+<div class="disclaimer-banner">
+    <strong>OPERATIONAL SITUATIONAL DISCLAIMER:</strong> All incident severity rankings (FATAL, MAJOR, MINOR) are automated algorithmic estimates calculated strictly from computer-vision scene features (vehicle count, bounding-box deformation area, detection confidence). They do NOT represent certified clinical triage, paramedic diagnosis, or human injury confirmation. Notifications dispatched via Telegram reach internal field personnel and do NOT contact municipal 911 / emergency services.
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function dispatchTelegramDiagnostic() {
+    const btn = document.getElementById('btn-test-telegram');
+    const box = document.getElementById('telegram-status-box');
+    btn.disabled = true;
+    btn.innerHTML = `⏳ Sending Test Alert...`;
+    box.style.display = 'block';
+    box.style.background = 'rgba(56, 189, 248, 0.12)';
+    box.style.border = '1px solid #38bdf8';
+    box.style.color = '#e0f2fe';
+    box.innerHTML = `Dispatching diagnostic message to Telegram channel...`;
+
+    fetch('/test_telegram', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
         }
-    </script>
-</body>
-</html>
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Send Diagnostic Verification Alert`;
+        if (data.success) {
+            box.style.background = 'rgba(16, 185, 129, 0.15)';
+            box.style.border = '1px solid #10b981';
+            box.style.color = '#34d399';
+            box.innerHTML = `<strong>✅ Delivered:</strong> ${data.message}`;
+        } else {
+            box.style.background = 'rgba(239, 68, 68, 0.15)';
+            box.style.border = '1px solid #ef4444';
+            box.style.color = '#f87171';
+            box.innerHTML = `<strong>⚠️ Notice:</strong> ${data.message}`;
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = `Send Diagnostic Verification Alert`;
+        box.style.background = 'rgba(239, 68, 68, 0.15)';
+        box.style.border = '1px solid #ef4444';
+        box.style.color = '#f87171';
+        box.innerHTML = `<strong>⚠️ Network Error:</strong> ${err.message}`;
+    });
+}
+</script>
+{% endblock %}

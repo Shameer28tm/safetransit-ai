@@ -26,6 +26,8 @@ instance/
 static/uploaded_video.mp4
 static/processed_video.mp4
 static/evidence/
+static/reports/*
+!static/reports/.gitkeep
 scratch/
 uploaded.mp4
 test1.mp4

@@ -1,135 +1,140 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>About Us</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        body {
-            background-image: url('/static/images/background.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
+{% extends "base.html" %}
 
-        .form-box {
-            background-color: rgba(255, 255, 255, 0.9);
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-        }
+{% block title %}SafeTransit-AI — About Project & Team{% endblock %}
 
-        h2, h3 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">About SafeTransit-AI</h1>
+    <p class="page-subtitle">A computer-vision research platform designed to automate road incident detection, quantify scene severity, and expedite field alerting.</p>
+</div>
 
-        .highlight-text {
-            color: #1a1a1a;
-            font-weight: bold;
-            font-size: 17px;
-        }
-
-        .team, .guide-section {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-
-        .member, .guide-member {
-            text-align: center;
-        }
-
-        .member img, .guide-member img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #2980b9;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-        }
-
-        .member p, .guide-member p {
-            margin-top: 8px;
-            font-weight: bold;
-            color: #34495e;
-            font-size: 14px;
-        }
-
-        a button {
-            margin-top: 25px;
-            padding: 8px 20px;
-            font-size: 15px;
-            border: none;
-            background-color: #3498db;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        a button:hover {
-            background-color: #2c80b4;
-        }
-
-        @media (max-width: 768px) {
-            .team, .guide-section {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .form-box {
-                margin: 20px;
-                padding: 20px;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="form-box">
-        <h2>About This Project</h2>
-        <p class="highlight-text">
-            This system detects road accidents using <strong>YOLOv8</strong> and alerts authorities via <strong>Telegram</strong>.
-        </p>
-
-        <h3>Meet Our Team</h3>
-        <div class="team">
-            <div class="member">
-                <img src="{{ url_for('static', filename='images/author1.jpg') }}" alt="Photo of Gaurav Bharti">
-                <p>Gaurav Bharti</p>
-            </div>
-            <div class="member">
-                <img src="{{ url_for('static', filename='images/author2.jpg') }}" alt="Photo of M Pritham">
-                <p>M Pritham</p>
-            </div>
-            <div class="member">
-                <img src="{{ url_for('static', filename='images/author3.jpg') }}" alt="Photo of Md Ali">
-                <p>Md Ali</p>
-            </div>
-            <div class="member">
-                <img src="{{ url_for('static', filename='images/author4.jpg') }}" alt="Photo of Vinay Kumar">
-                <p>Vinay Kumar</p>
-            </div>
-        </div>
-
-        <h3>Project Guide</h3>
-        <div class="guide-section">
-            <div class="guide-member">
-                <img src="{{ url_for('static', filename='images/guide.jpg') }}" alt="Photo of Mrs. Anupama P V">
-                <p>Mrs. Anupama P V<br><span style="font-weight: normal;"></span></p>
-            </div>
-        </div>
-
-        <a href="/home"><button>Home</button></a>
+<!-- Architecture & Project Story -->
+<div class="card" style="margin-bottom: 28px;">
+    <div class="card-header">
+        <h3 class="card-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            System Architecture & Core Capabilities
+        </h3>
+        <span class="badge badge-cyan">Architecture Brief</span>
     </div>
 
-</body>
-</html>
+    <div style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.7; display:flex; flex-direction:column; gap:16px;">
+        <p>
+            Urban traffic infrastructure worldwide suffers from delayed emergency response times when vehicular collisions occur in blind spots or unattended CCTV segments. Traditional surveillance requires human operators to monitor hundreds of concurrent feeds. <strong>SafeTransit-AI</strong> automates this workflow by continuously analyzing video streams with computer-vision models to identify collision events the moment impact occurs.
+        </p>
+
+        <div class="grid-3" style="margin-top: 8px;">
+            <div style="background: rgba(10, 16, 36, 0.6); padding: 18px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div style="color:var(--accent-electric); font-weight:700; margin-bottom:6px; font-size:1rem;">1. Object & Collision Detection</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">
+                    Custom-trained YOLOv8 weights (<code>best.onnx</code>) executed through native C++ OpenCV DNN with letterbox scaling (640x640), Non-Maximum Suppression, and dual-class mapping for <code>car</code> and <code>accident</code>.
+                </div>
+            </div>
+
+            <div style="background: rgba(10, 16, 36, 0.6); padding: 18px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div style="color:var(--status-green); font-weight:700; margin-bottom:6px; font-size:1rem;">2. Situational Severity Estimation</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">
+                    RandomForest classifier (<code>severity_model.pkl</code>) evaluating scene impact metrics across a 4-feature schema (detection count, mean confidence, bounding box pixel area, and class index) into <code>fatal</code>, <code>major</code>, or <code>minor</code> visual ratings.
+                </div>
+            </div>
+
+            <div style="background: rgba(10, 16, 36, 0.6); padding: 18px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div style="color:var(--accent-cyan); font-weight:700; margin-bottom:6px; font-size:1rem;">3. Telemetry & Field Alerts</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">
+                    Verified Telegram Bot integration (<code>@SafeTransitAccidentBot</code>) featuring sliding cooldown suppression (60s), photographic evidence snapshots, and formatted incident timestamps.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Members Grid (Original Preserved) -->
+<div class="card" style="margin-bottom: 28px;">
+    <div class="card-header">
+        <h3 class="card-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            Project Engineering Team
+        </h3>
+        <span class="badge badge-muted">Original Contributors</span>
+    </div>
+
+    <div class="grid-4" style="margin-top: 10px;">
+        <!-- Member 1: Gaurav Bharti -->
+        <div style="background: rgba(10, 16, 36, 0.7); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px; text-align: center;">
+            <img src="{{ url_for('static', filename='images/author1.jpg') }}" alt="Gaurav Bharti" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-electric); box-shadow: 0 0 15px var(--accent-cyan-glow); margin: 0 auto 12px auto; display:block;">
+            <h4 style="color: var(--text-pure); font-size: 1rem; margin-bottom: 4px;">Gaurav Bharti</h4>
+            <div style="font-size: 0.8rem; color: var(--accent-cyan);">Team Member</div>
+        </div>
+
+        <!-- Member 2: M Pritham -->
+        <div style="background: rgba(10, 16, 36, 0.7); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px; text-align: center;">
+            <img src="{{ url_for('static', filename='images/author2.jpg') }}" alt="M Pritham" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-electric); box-shadow: 0 0 15px var(--accent-cyan-glow); margin: 0 auto 12px auto; display:block;">
+            <h4 style="color: var(--text-pure); font-size: 1rem; margin-bottom: 4px;">M Pritham</h4>
+            <div style="font-size: 0.8rem; color: var(--accent-cyan);">Team Member</div>
+        </div>
+
+        <!-- Member 3: Md Ali -->
+        <div style="background: rgba(10, 16, 36, 0.7); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px; text-align: center;">
+            <img src="{{ url_for('static', filename='images/author3.jpg') }}" alt="Md Ali" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-electric); box-shadow: 0 0 15px var(--accent-cyan-glow); margin: 0 auto 12px auto; display:block;">
+            <h4 style="color: var(--text-pure); font-size: 1rem; margin-bottom: 4px;">Md Ali</h4>
+            <div style="font-size: 0.8rem; color: var(--accent-cyan);">Team Member</div>
+        </div>
+
+        <!-- Member 4: Vinay Kumar -->
+        <div style="background: rgba(10, 16, 36, 0.7); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px; text-align: center;">
+            <img src="{{ url_for('static', filename='images/author4.jpg') }}" alt="Vinay Kumar" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-electric); box-shadow: 0 0 15px var(--accent-cyan-glow); margin: 0 auto 12px auto; display:block;">
+            <h4 style="color: var(--text-pure); font-size: 1rem; margin-bottom: 4px;">Vinay Kumar</h4>
+            <div style="font-size: 0.8rem; color: var(--accent-cyan);">Team Member</div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Guide Card -->
+<div class="card" style="margin-bottom: 28px;">
+    <div class="card-header">
+        <h3 class="card-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+            Academic & Project Guide
+        </h3>
+        <span class="badge badge-cyan">Faculty Mentorship</span>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:24px; padding: 10px 0;">
+        <img src="{{ url_for('static', filename='images/guide.jpg') }}" alt="Mrs. Anupama P V" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--status-green); box-shadow: 0 0 15px var(--status-green-glow);">
+        <div>
+            <h3 style="color: var(--text-pure); font-size: 1.15rem; margin-bottom: 4px;">Mrs. Anupama P V</h3>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                Faculty Advisor and Project Guide &bull; Supervised machine learning architecture and domain methodology.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Product Enhancement Credits -->
+<div class="card" style="margin-bottom: 24px; border-color: rgba(56, 189, 248, 0.35);">
+    <div class="card-header">
+        <h3 class="card-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+            Product Transformation & Signature Engineering
+        </h3>
+        <span class="badge badge-green">Shameer Signature Edition</span>
+    </div>
+
+    <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+        <p style="margin-bottom: 10px;">
+            Enhanced, stabilized, and production-hardened by <strong>Shameer</strong> for the Hackathon Demonstration:
+        </p>
+        <ul style="padding-left: 20px; display:flex; flex-direction:column; gap:6px;">
+            <li>Resolved the Windows PyTorch DLL code-integrity blocker via headless native C++ OpenCV DNN ONNX inference.</li>
+            <li>Architected the multi-frame video analyzer with temporal incident coalescing and photographic evidence snapshot capture.</li>
+            <li>Connected and verified real-time Telegram Bot alerting (<code>@SafeTransitAccidentBot</code>) with rate-limiting and secret masking.</li>
+            <li>Designed and deployed the Deep Space Navy research-grade operations command center.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Non-Medical Disclaimer Banner -->
+<div class="disclaimer-banner">
+    <strong>OPERATIONAL DISCLAIMER:</strong> SafeTransit-AI is an experimental computer-vision decision-support system. Visual severity predictions (fatal/major/minor) represent algorithmic scene deformation approximations and do not constitute certified clinical assessments or paramedic triage.
+</div>
+{% endblock %}

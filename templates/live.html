@@ -1,14 +1,94 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Live Detection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body style="background-image: url('/static/images/background.jpg');">
-    <div class="form-box">
-        <h2>Live Detection</h2>
-        <img src="{{ url_for('video_feed') }}" width="800"><br>
-        <a href="/home"><button>Home</button></a>
+{% extends "base.html" %}
+
+{% block title %}SafeTransit-AI — Live Monitoring & Collision Detection{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
+    <div>
+        <h1 class="page-title">Live Video Surveillance Feed</h1>
+        <p class="page-subtitle">Real-time object detection and accident telemetry streaming directly from connected camera sensors.</p>
     </div>
-</body>
-</html>
+    <div style="display:flex; gap:12px;">
+        <button type="button" id="btn-toggle-audio" class="btn btn-outline" onclick="toggleAudioAlert()">
+            <span id="audio-icon">🔊</span>
+            <span id="audio-label">Browser Audio: ON</span>
+        </button>
+        <a href="/home" class="btn btn-primary">
+            Return to Command Center
+        </a>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Camera Viewport Card -->
+    <div class="card" style="grid-column: span 2;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span class="pulse-dot pulse-red"></span>
+                Primary Sensor Stream: Camera 01 (CCTV Intersection)
+            </h3>
+            <div style="display:flex; gap:8px;">
+                <span id="live-status-badge" class="badge badge-green">LIVE STREAMING</span>
+                <span class="badge badge-cyan">OpenCV DNN Native</span>
+            </div>
+        </div>
+
+        <div style="background: #000000; border-radius: 8px; overflow: hidden; position: relative; min-height: 480px; display: flex; align-items: center; justify-content: center;">
+            <img id="stream-img" src="{{ url_for('video_feed') }}" alt="Live Camera Feed" style="width: 100%; max-height: 600px; object-fit: contain; display: block;" onerror="handleStreamError()">
+            
+            <!-- Offline/Error Overlay -->
+            <div id="stream-error-box" style="display: none; position: absolute; inset: 0; background: rgba(3, 6, 17, 0.9); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px;">
+                <svg width="48" height="48" fill="none" stroke="#ef4444" viewBox="0 0 24 24" style="margin-bottom:14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                <h3 style="color: var(--text-pure); margin-bottom: 8px;">Camera Sensor Stream Offline</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 480px; line-height: 1.5; margin-bottom: 20px;">
+                    No active webcam device (index 0) was recognized by OpenCV on the host system. For pre-recorded video analysis, please use the Video Intelligence upload engine.
+                </p>
+                <a href="/upload" class="btn btn-primary">
+                    Switch to Video Intelligence &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- Stream Diagnostics HUD Footer -->
+        <div style="margin-top: 16px; display:flex; justify-content:space-between; align-items:center; font-size: 0.85rem; color: var(--text-secondary);">
+            <div style="display:flex; gap:16px;">
+                <span>Active Target Classes: <strong style="color:var(--text-pure);">car (0), accident (1)</strong></span>
+                <span>Inference Engine: <strong style="color:#38bdf8;">best.onnx (640x640)</strong></span>
+            </div>
+            <div>
+                Telegram Alerts: <span style="color:#34d399; font-weight:600;">ACTIVE (Cooldown 60s)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Browser-Side Audio Alert Element -->
+<audio id="browser-alert-audio" src="{{ url_for('static', filename='alert.mp3') }}" preload="auto"></audio>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let browserAudioEnabled = true;
+
+function toggleAudioAlert() {
+    browserAudioEnabled = !browserAudioEnabled;
+    const icon = document.getElementById('audio-icon');
+    const label = document.getElementById('audio-label');
+    if (browserAudioEnabled) {
+        icon.innerText = "🔊";
+        label.innerText = "Browser Audio: ON";
+    } else {
+        icon.innerText = "🔇";
+        label.innerText = "Browser Audio: MUTED";
+    }
+}
+
+function handleStreamError() {
+    document.getElementById('stream-img').style.display = 'none';
+    document.getElementById('stream-error-box').style.display = 'flex';
+    const badge = document.getElementById('live-status-badge');
+    badge.innerText = "SENSOR OFFLINE";
+    badge.className = "badge badge-red";
+}
+</script>
+{% endblock %}
