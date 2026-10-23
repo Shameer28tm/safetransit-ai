@@ -1,0 +1,5 @@
+train: "C:/Users/Admin/OneDrive/Desktop/MajorProjecr/ACCIDENT DETECTION/testtech/images"
+val: "C:/Users/Admin/OneDrive/Desktop/MajorProjecr/ACCIDENT DETECTION/testtech/images/validation"
+
+nc: 2
+names: ['car', 'accident']

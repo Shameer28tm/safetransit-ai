@@ -1,0 +1,32 @@
+SafeTransit-AI Demonstration Videos Provenance & Usage Guide
+================================================================
+
+1. accident_crash_demo.mp4 (Recommended for Live Evaluation)
+------------------------------------------------------------
+Location: demo_media/accident_crash_demo.mp4
+File Size: ~13.99 MB (14,675,027 bytes)
+Resolution: 1920 x 1080 (1080p Full HD)
+FPS: 29.97
+Duration: 13.15 seconds (394 frames)
+Detection Performance:
+  - Incident 1: 00:00.9 – 00:03.3 (Peak Conf: 87.4%, Severity: MAJOR)
+  - Incident 2: 00:06.1 – 00:13.1 (Peak Conf: 85.6%, Severity: MAJOR)
+  - 201 frames with active collision detections (>0.35 confidence threshold).
+  - Snapshot artifacts: static/evidence/inc_1_0.jpg, static/evidence/inc_2_6.jpg
+Usage: High-confidence positive collision test case for demonstration to competition judges.
+
+2. highway_collision_demo.webm (Public Domain Surveillance)
+-----------------------------------------------------------
+Location: demo_media/highway_collision_demo.webm
+File Size: ~14.91 MB (15,641,916 bytes)
+Resolution: 1280 x 720 (720p HD)
+FPS: 30.0
+Duration: 30.07 seconds (902 frames)
+Source URL: https://upload.wikimedia.org/wikipedia/commons/b/b1/Multiple_cars_rear-end_collision_on_highway.webm
+Source Page: https://commons.wikimedia.org/wiki/File:Multiple_cars_rear-end_collision_on_highway.webm
+License: Public Domain (PD-automated: highway CCTV monitoring recording without human creative input, uploaded via video2commons to Wikimedia Commons).
+Description: G56 Hangrui Expressway automated highway camera recording multi-vehicle rear-end collision sequence.
+Detection Performance:
+  - Vehicles tracked across 301 sampled frames.
+  - Peak vehicle tracking confidence: 78.96%.
+Usage: Open source real-world highway traffic recording with clear provenance.

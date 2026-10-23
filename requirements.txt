@@ -1,0 +1,31 @@
+# SafeTransit-AI Production & Development Dependencies
+
+# Web Application Framework & Production WSGI
+Flask>=3.0.0,<3.2.0
+Werkzeug>=3.0.0,<3.2.0
+waitress>=3.0.0
+
+# Configuration Management
+python-dotenv>=1.0.0
+
+# Computer Vision & Utilities
+opencv-python>=4.8.0
+cvzone>=2.0.0
+Pillow>=10.0.0
+
+# Data Manipulation & Machine Learning
+numpy>=1.24.0,<3.0.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Networking & Audio Alerts
+requests>=2.31.0
+pygame>=2.5.0
+
+# Note on Deep Learning Runtime:
+# On Windows systems where Windows Smart App Control (SAC) or Code Integrity is enabled,
+# native PyTorch DLLs (torch_cpu.dll / shm.dll) are blocked with WinError 4551.
+# The application supports native Windows inference via OpenCV DNN (best.onnx),
+# while native PyTorch/Ultralytics is supported inside WSL2 or Linux containers.
+# ultralytics>=8.0.0

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>About Us</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-image: url('/static/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .form-box {
+            background-color: rgba(255, 255, 255, 0.9);
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        h2, h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .highlight-text {
+            color: #1a1a1a;
+            font-weight: bold;
+            font-size: 17px;
+        }
+
+        .team, .guide-section {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .member, .guide-member {
+            text-align: center;
+        }
+
+        .member img, .guide-member img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #2980b9;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+
+        .member p, .guide-member p {
+            margin-top: 8px;
+            font-weight: bold;
+            color: #34495e;
+            font-size: 14px;
+        }
+
+        a button {
+            margin-top: 25px;
+            padding: 8px 20px;
+            font-size: 15px;
+            border: none;
+            background-color: #3498db;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        a button:hover {
+            background-color: #2c80b4;
+        }
+
+        @media (max-width: 768px) {
+            .team, .guide-section {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .form-box {
+                margin: 20px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-box">
+        <h2>About This Project</h2>
+        <p class="highlight-text">
+            This system detects road accidents using <strong>YOLOv8</strong> and alerts authorities via <strong>Telegram</strong>.
+        </p>
+
+        <h3>Meet Our Team</h3>
+        <div class="team">
+            <div class="member">
+                <img src="{{ url_for('static', filename='images/author1.jpg') }}" alt="Photo of Gaurav Bharti">
+                <p>Gaurav Bharti</p>
+            </div>
+            <div class="member">
+                <img src="{{ url_for('static', filename='images/author2.jpg') }}" alt="Photo of M Pritham">
+                <p>M Pritham</p>
+            </div>
+            <div class="member">
+                <img src="{{ url_for('static', filename='images/author3.jpg') }}" alt="Photo of Md Ali">
+                <p>Md Ali</p>
+            </div>
+            <div class="member">
+                <img src="{{ url_for('static', filename='images/author4.jpg') }}" alt="Photo of Vinay Kumar">
+                <p>Vinay Kumar</p>
+            </div>
+        </div>
+
+        <h3>Project Guide</h3>
+        <div class="guide-section">
+            <div class="guide-member">
+                <img src="{{ url_for('static', filename='images/guide.jpg') }}" alt="Photo of Mrs. Anupama P V">
+                <p>Mrs. Anupama P V<br><span style="font-weight: normal;"></span></p>
+            </div>
+        </div>
+
+        <a href="/home"><button>Home</button></a>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SafeTransit-AI — Command Center Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="background-image: url('/static/images/background.jpg');">
+    <div class="form-box" style="width: 480px; padding: 35px;">
+        <h1 style="color: #00f7ff; font-size: 24px; margin-top: 0; letter-spacing: 0.5px;">SafeTransit-AI Command Hub</h1>
+        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Welcome, <strong>{{ session.get('user', 'Operator') }}</strong></p>
+
+        <a href="/live"><button style="margin: 8px 0;">🔴 Live Surveillance Detection</button></a><br>
+        <a href="/upload"><button style="margin: 8px 0;">📹 Upload & Analyze Video</button></a><br>
+        
+        <!-- Telegram Test Action -->
+        <button type="button" id="btn-test-telegram" onclick="testTelegramAlert()" style="background-color: #0284c7; margin: 8px 0;">
+            📡 Test Telegram Alert Channel
+        </button><br>
+        <div id="telegram-status-box" style="display:none; font-size:12px; padding:10px; border-radius:8px; margin:8px auto; width:85%; text-align:left;"></div>
+
+        <a href="/about"><button style="background-color: #334155; margin: 8px 0;">ℹ️ About SafeTransit-AI</button></a><br>
+        <a href="/logout"><button style="background-color: #ef4444; margin: 8px 0;">🚪 Logout</button></a>
+
+        <div style="margin-top: 20px; font-size: 11px; color: #64748b; line-height: 1.4;">
+            Automated accident detection with multi-frame duration tracking, computer-vision severity scoring, and alert throttling.
+        </div>
+    </div>
+
+    <script>
+        function testTelegramAlert() {
+            const btn = document.getElementById('btn-test-telegram');
+            const box = document.getElementById('telegram-status-box');
+            btn.disabled = true;
+            btn.innerText = "⏳ Dispatching Diagnostic Ping...";
+            box.style.display = "block";
+            box.style.backgroundColor = "rgba(56, 189, 248, 0.15)";
+            box.style.border = "1px solid #38bdf8";
+            box.style.color = "#e0f2fe";
+            box.innerText = "Sending test message to configured Telegram channel...";
+
+            fetch('/test_telegram')
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerText = "📡 Test Telegram Alert Channel";
+                    if (data.success) {
+                        box.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
+                        box.style.borderColor = "#10b981";
+                        box.style.color = "#34d399";
+                        box.innerHTML = `<strong>✅ Success:</strong> ${data.message}`;
+                    } else {
+                        box.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+                        box.style.borderColor = "#ef4444";
+                        box.style.color = "#f87171";
+                        box.innerHTML = `<strong>⚠️ Alert:</strong> ${data.message}`;
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerText = "📡 Test Telegram Alert Channel";
+                    box.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+                    box.style.borderColor = "#ef4444";
+                    box.style.color = "#f87171";
+                    box.innerHTML = `<strong>⚠️ Network Error:</strong> ${err.message}`;
+                });
+        }
+    </script>
+</body>
+</html>

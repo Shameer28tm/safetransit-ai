@@ -1,0 +1,44 @@
+# Python Environment & Cache
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Environment Credentials & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# User & Session Data
+users.json
+instance/
+*.sqlite3
+*.db
+
+# Temporary & Uploaded Media Files
+static/uploaded_video.mp4
+static/processed_video.mp4
+static/evidence/
+scratch/
+uploaded.mp4
+test1.mp4
+test2.mp4
+cr.mp4
+
+# Model Training Runs & Checkpoints
+runs/
+*.cache
+
+# IDE & OS Metadata
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store

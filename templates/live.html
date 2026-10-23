@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="background-image: url('/static/images/background.jpg');">
+    <div class="form-box">
+        <h2>Live Detection</h2>
+        <img src="{{ url_for('video_feed') }}" width="800"><br>
+        <a href="/home"><button>Home</button></a>
+    </div>
+</body>
+</html>

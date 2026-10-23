@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Video Detection — SafeTransit-AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .flash-msg {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .demo-box {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .loading-overlay {
+            display: none;
+            margin-top: 15px;
+            color: #00f7ff;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body style="background-image: url('/static/images/background.jpg');">
+    <div class="form-box" style="width: 480px; padding: 35px;">
+        <h2 style="color: #00f7ff; margin-top: 0;">Upload Video for Analysis</h2>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">
+            Full duration analysis across all frames with temporal incident grouping, OpenCV DNN inference, and scene severity scoring.
+        </p>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-msg">⚠️ {{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/upload" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+            <input type="file" name="video" accept="video/mp4,video/avi,video/quicktime,video/x-matroska,video/webm" required><br>
+            <button type="submit" id="btn-submit">Upload & Analyze Full Video</button>
+        </form>
+
+        <div id="loading-spinner" class="loading-overlay">
+            ⏳ <strong>Processing video...</strong> Analyzing frames, grouping incidents, and rendering evidence snapshots. Please wait.
+        </div>
+
+        <a href="/home"><button style="background-color: #334155; margin-top: 10px;">Return to Home</button></a>
+
+        <div class="demo-box">
+            <strong style="color: #38bdf8;">💡 Benchmark & Demonstration Videos Available:</strong>
+            <ul style="padding-left: 20px; margin: 8px 0 0 0; line-height: 1.6;">
+                <li><code>demo_media/highway_collision_demo.webm</code> (Public Domain highway multi-car collision)</li>
+                <li><code>cr.mp4</code> / <code>test1.mp4</code> / <code>test2.mp4</code> (Pre-loaded benchmark road scenes)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading-spinner').style.display = 'block';
+            document.getElementById('btn-submit').disabled = true;
+            document.getElementById('btn-submit').innerText = "Analyzing Video Frames...";
+        }
+    </script>
+</body>
+</html>
