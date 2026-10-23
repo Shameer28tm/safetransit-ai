@@ -64,11 +64,27 @@
 
 <!-- Browser-Side Audio Alert Element -->
 <audio id="browser-alert-audio" src="{{ url_for('static', filename='alert.mp3') }}" preload="auto"></audio>
+<div id="live-incident-alert" class="live-incident-alert" hidden>ACCIDENT DETECTED — SOS ALERT ACTIVE</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 let browserAudioEnabled = true;
+let lastLiveIncidentAt = 0;
+const liveAlarm = document.getElementById("browser-alert-audio");
+async function pollLiveIncident() {
+    try {
+        const response = await fetch("/api/live_status", { cache: "no-store" });
+        const data = await response.json();
+        if (data.accident_detected && data.event_id !== lastLiveIncidentAt) {
+            lastLiveIncidentAt = data.event_id;
+            const alertBox = document.getElementById("live-incident-alert");
+            alertBox.hidden = false;
+            if (browserAudioEnabled && liveAlarm) { liveAlarm.currentTime = 0; liveAlarm.play().catch(() => {}); }
+        }
+    } catch (_) { /* camera status can be unavailable while the stream starts */ }
+}
+setInterval(pollLiveIncident, 1000);
 
 function toggleAudioAlert() {
     browserAudioEnabled = !browserAudioEnabled;
