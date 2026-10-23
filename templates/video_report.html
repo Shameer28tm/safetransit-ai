@@ -73,7 +73,7 @@
     </div>
 
     <div style="background: #000000; border-radius: 8px; overflow: hidden; display: flex; justify-content: center;">
-        <video controls autoplay style="width: 100%; max-height: 520px; object-fit: contain;">
+        <video controls playsinline preload="metadata" style="width: 100%; max-height: 78vh; object-fit: contain; background: #101827;">
             <source src="{{ report.video_metadata.processed_video_path }}" type="video/mp4">
             Your browser does not support HTML5 video playback.
         </video>
@@ -183,8 +183,17 @@
 </div>
 {% endif %}
 
-<!-- Mandatory Non-Medical Disclaimer Banner -->
-<div class="disclaimer-banner">
-    <strong>OPERATIONAL SITUATIONAL DISCLAIMER:</strong> {{ report.disclaimer }}
-</div>
+<div class="notice-banner"><strong>Review guidance:</strong> Automated scene estimates support rapid review. Confirm the surrounding footage and local conditions before dispatching or escalating an incident.</div>
+{% if report.incidents and report.incidents|length > 0 %}
+<audio id="incident-alarm" src="{{ url_for('static', filename='alert.mp3') }}" preload="auto"></audio>
+<div id="audio-fallback" class="audio-fallback" hidden>Incident detected. <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('incident-alarm').play()">Play SOS alarm</button></div>
+<script>
+window.addEventListener("DOMContentLoaded", async () => {
+  const alarm = document.getElementById("incident-alarm");
+  if (!alarm) return;
+  try { await alarm.play(); }
+  catch (_) { const fallback = document.getElementById("audio-fallback"); if (fallback) fallback.hidden = false; }
+});
+</script>
+{% endif %}
 {% endblock %}
