@@ -3,6 +3,8 @@ import os
 import json
 import time
 import hashlib
+import threading
+import uuid
 from datetime import timedelta
 import cv2
 import pandas as pd
@@ -89,13 +91,17 @@ def send_telegram_alert(severity='major', timestamp_str='', confidence=0.0):
 # Live Camera Detection Stream
 # --------------------------
 alert_sent_live = False
+live_event_id = 0
+live_accident_detected = False
+analysis_jobs = {}
+analysis_jobs_lock = threading.Lock()
 
 def detect_accident(video_source=0):
     """
     Generator streaming processed webcam frames with accident and vehicle bounding boxes.
     If camera 0 is unavailable, yields a clean diagnostic HUD frame.
     """
-    global alert_sent_live
+    global alert_sent_live, live_event_id, live_accident_detected
     cap = cv2.VideoCapture(video_source)
     
     if not cap.isOpened():
@@ -121,6 +127,12 @@ def detect_accident(video_source=0):
         frame = cv2.resize(frame, (1020, 500))
         conf_thresh = float(os.environ.get('CONFIDENCE_THRESHOLD', 0.28))
         detections = detector.detect(frame, conf_threshold=conf_thresh)
+        current_has_accident = any(d["label"].lower() == "accident" for d in detections)
+        if current_has_accident and not live_accident_detected:
+            live_event_id += 1
+            live_accident_detected = True
+        elif not current_has_accident:
+            live_accident_detected = False
         
         for d in detections:
             x1, y1, x2, y2 = d['box']
@@ -276,6 +288,12 @@ def live():
 def video_feed():
     return Response(detect_accident(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route("/api/live_status")
+def api_live_status():
+    if "user" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    return jsonify({"accident_detected": live_accident_detected, "event_id": live_event_id})
+
 # --------------------------
 # Video Intelligence & Analysis Routes
 # --------------------------
@@ -317,7 +335,36 @@ def upload():
             flash(f"Failed to persist uploaded video: {e}", "danger")
             return render_template('upload.html')
 
-        # Run end-to-end full multi-frame analysis engine
+        # Start analysis in a worker so the browser can poll real frame progress.
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            task_id = uuid.uuid4().hex
+            with analysis_jobs_lock:
+                analysis_jobs[task_id] = {"state": "running", "progress": 0, "analyzed_frames": 0, "total_frames": 0, "stage": "Opening video…"}
+            def progress_update(progress):
+                with analysis_jobs_lock:
+                    if task_id in analysis_jobs:
+                        analysis_jobs[task_id].update(progress)
+            def run_analysis():
+                try:
+                    report_result = video_analyzer.analyze_video(
+                        video_path=saved_video_path,
+                        conf_threshold=conf_thresh,
+                        target_fps=15,
+                        trigger_telegram=True,
+                        progress_callback=progress_update
+                    )
+                    with analysis_jobs_lock:
+                        if report_result.get("success"):
+                            analysis_jobs[task_id].update({"state": "complete", "progress": 100, "stage": "Analysis complete", "job_id": report_result.get("job_id"), "report_url": f"/report/{report_result.get('job_id')}"})
+                        else:
+                            analysis_jobs[task_id].update({"state": "error", "error": report_result.get("error", "Video analysis failed.")})
+                except Exception as exc:
+                    with analysis_jobs_lock:
+                        analysis_jobs[task_id].update({"state": "error", "error": str(exc)})
+            threading.Thread(target=run_analysis, daemon=True, name=f"analysis-{task_id[:8]}").start()
+            return jsonify({"success": True, "task_id": task_id}), 202
+
+        # Backward-compatible synchronous submission for non-JavaScript clients.
         report = video_analyzer.analyze_video(
             video_path=saved_video_path,
             conf_threshold=conf_thresh,
@@ -330,10 +377,21 @@ def upload():
             return render_template('upload.html')
 
         session['latest_job_id'] = report.get('job_id')
-        play_alert()
+        if report.get("incidents"):
+            play_alert()
         return render_template('video_report.html', report=report)
 
     return render_template('upload.html')
+
+@app.route("/analysis_status/<task_id>")
+def analysis_status(task_id):
+    if "user" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    with analysis_jobs_lock:
+        status = analysis_jobs.get(secure_filename(task_id))
+        if status is None:
+            return jsonify({"state": "error", "error": "Analysis task not found."}), 404
+        return jsonify(dict(status))
 
 @app.route('/process_video')
 def process_video():
