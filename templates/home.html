@@ -21,7 +21,7 @@
 </div>
 
 <!-- Primary Telemetry KPI Grid -->
-<div class="grid-4" style="margin-bottom: 28px;">
+<div class="grid-3" style="margin-bottom: 28px;">
     <!-- Model Backend KPI -->
     <div class="card kpi-card cyan-card">
         <div class="kpi-label">Detector Engine</div>
@@ -54,18 +54,6 @@
         <div class="kpi-subtext">RandomForest (4-Feature Schema)</div>
     </div>
 
-    <!-- Telegram Integration Status -->
-    <div class="card kpi-card success-card">
-        <div class="kpi-label">Telegram Channel</div>
-        <div class="kpi-value" style="font-size: 1.35rem; color:#34d399;">
-            {% if telegram_health.reachable %}
-                VERIFIED
-            {% else %}
-                CONFIGURED
-            {% endif %}
-        </div>
-        <div class="kpi-subtext">Target Chat: {{ telegram_health.masked_chat_id }}</div>
-    </div>
 </div>
 
 <!-- Two-Column Operations Layout -->
@@ -123,37 +111,6 @@
         {% endif %}
     </div>
 
-    <!-- Verified Alerting Integration Card -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                Telegram Field Alert Integration
-            </h3>
-            <span class="badge badge-green">
-                <span class="pulse-dot pulse-green" style="width:6px; height:6px;"></span>
-                Online
-            </span>
-        </div>
-
-        <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
-            <p style="margin-bottom: 10px;">
-                Direct automated alert channel linked to <strong>@{{ telegram_health.bot_username or 'SafeTransitAccidentBot' }}</strong> with sliding cooldown and duplicate suppression.
-            </p>
-            <div style="background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 0.8rem;">
-                <div>Bot ID: <strong>{{ telegram_health.masked_token }}</strong></div>
-                <div>Channel Chat ID: <strong>{{ telegram_health.masked_chat_id }}</strong></div>
-                <div>Status: <span style="color:#34d399;">Active & Ready for Judges Demo</span></div>
-            </div>
-        </div>
-
-        <!-- Interactive Diagnostic Trigger (POST) -->
-        <button type="button" id="btn-test-telegram" class="btn btn-cyan" style="width: 100%;" onclick="dispatchTelegramDiagnostic()">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-            Send Diagnostic Verification Alert
-        </button>
-        <div id="telegram-status-box" style="display:none; margin-top:14px; font-size:13px; padding:12px; border-radius:8px;"></div>
-    </div>
 </div>
 
 <!-- Incident Timeline Table (Real Data Only) -->
@@ -215,55 +172,5 @@
     {% endif %}
 </div>
 
-<!-- Non-Medical Disclaimer -->
-<div class="disclaimer-banner">
-    <strong>OPERATIONAL SITUATIONAL DISCLAIMER:</strong> All incident severity rankings (FATAL, MAJOR, MINOR) are automated algorithmic estimates calculated strictly from computer-vision scene features (vehicle count, bounding-box deformation area, detection confidence). They do NOT represent certified clinical triage, paramedic diagnosis, or human injury confirmation. Notifications dispatched via Telegram reach internal field personnel and do NOT contact municipal 911 / emergency services.
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-function dispatchTelegramDiagnostic() {
-    const btn = document.getElementById('btn-test-telegram');
-    const box = document.getElementById('telegram-status-box');
-    btn.disabled = true;
-    btn.innerHTML = `⏳ Sending Test Alert...`;
-    box.style.display = 'block';
-    box.style.background = 'rgba(56, 189, 248, 0.12)';
-    box.style.border = '1px solid #38bdf8';
-    box.style.color = '#e0f2fe';
-    box.innerHTML = `Dispatching diagnostic message to Telegram channel...`;
-
-    fetch('/test_telegram', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Send Diagnostic Verification Alert`;
-        if (data.success) {
-            box.style.background = 'rgba(16, 185, 129, 0.15)';
-            box.style.border = '1px solid #10b981';
-            box.style.color = '#34d399';
-            box.innerHTML = `<strong>✅ Delivered:</strong> ${data.message}`;
-        } else {
-            box.style.background = 'rgba(239, 68, 68, 0.15)';
-            box.style.border = '1px solid #ef4444';
-            box.style.color = '#f87171';
-            box.innerHTML = `<strong>⚠️ Notice:</strong> ${data.message}`;
-        }
-    })
-    .catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = `Send Diagnostic Verification Alert`;
-        box.style.background = 'rgba(239, 68, 68, 0.15)';
-        box.style.border = '1px solid #ef4444';
-        box.style.color = '#f87171';
-        box.innerHTML = `<strong>⚠️ Network Error:</strong> ${err.message}`;
-    });
-}
-</script>
+<div class="notice-banner"><strong>Operational note:</strong> Review flagged frames and surrounding footage before acting. Automated detections can miss incidents or flag unusual scenes; use the report as decision support, not a substitute for on-site assessment.</div>
 {% endblock %}
