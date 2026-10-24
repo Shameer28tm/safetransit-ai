@@ -303,7 +303,8 @@ class VideoAnalyzer:
             success, msg = notifier.send_incident_alert(
                 severity=highest_inc["peak_severity"],
                 timestamp_str=f"{highest_inc['start_time']} - {highest_inc['end_time']}",
-                confidence=highest_inc["peak_confidence"]
+                confidence=highest_inc["peak_confidence"],
+                force=True
             )
             telegram_alert_result = msg
         elif not incidents:
