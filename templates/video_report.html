@@ -185,14 +185,32 @@
 
 <div class="notice-banner"><strong>Review guidance:</strong> Automated scene estimates support rapid review. Confirm the surrounding footage and local conditions before dispatching or escalating an incident.</div>
 {% if report.incidents and report.incidents|length > 0 %}
-<audio id="incident-alarm" src="{{ url_for('static', filename='alert.mp3') }}" preload="auto"></audio>
-<div id="audio-fallback" class="audio-fallback" hidden>Incident detected. <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('incident-alarm').play()">Play SOS alarm</button></div>
+<div class="incident-sos-banner" role="alert">
+  <div class="incident-sos-copy"><strong>ACCIDENT DETECTED</strong><span>Incident evidence is ready. SOS alert has been requested for this incident.</span></div>
+  <button type="button" id="enable-sos-audio" class="btn btn-danger" onclick="enableSosAudio()">Enable SOS Sound</button>
+</div>
+<audio id="incident-alarm" src="{{ url_for('static', filename='alert.mp3') }}" preload="auto" loop></audio>
+<div id="audio-fallback" class="audio-fallback" hidden>Your browser blocked automatic audio. Select “Enable SOS Sound” to play the alarm.</div>
 <script>
-window.addEventListener("DOMContentLoaded", async () => {
-  const alarm = document.getElementById("incident-alarm");
-  if (!alarm) return;
-  try { await alarm.play(); }
-  catch (_) { const fallback = document.getElementById("audio-fallback"); if (fallback) fallback.hidden = false; }
+const sosAlarm = document.getElementById('incident-alarm');
+async function enableSosAudio() {
+  if (!sosAlarm) return;
+  try {
+    sosAlarm.currentTime = 0;
+    await sosAlarm.play();
+    const button = document.getElementById('enable-sos-audio');
+    button.textContent = 'SOS Sound Playing';
+    button.classList.add('btn-outline');
+    document.getElementById('audio-fallback').hidden = true;
+  } catch (error) {
+    document.getElementById('audio-fallback').hidden = false;
+  }
+}
+window.addEventListener('DOMContentLoaded', () => {
+  enableSosAudio().catch(() => {});
+  window.setTimeout(() => {
+    if (sosAlarm && sosAlarm.paused) document.getElementById('audio-fallback').hidden = false;
+  }, 900);
 });
 </script>
 {% endif %}
