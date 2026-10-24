@@ -79,12 +79,13 @@ def play_alert():
     except Exception as e:
         print("[Audio] Notice: pygame playback skipped:", e)
 
-def send_telegram_alert(severity='major', timestamp_str='', confidence=0.0):
-    """Delegate to modular TelegramNotifier with deduplication and cooldown."""
+def send_telegram_alert(severity='major', timestamp_str='', confidence=0.0, force=False):
+    """Send one alert for a newly detected live incident; repeated frames are latched upstream."""
     return notifier.send_incident_alert(
         severity=severity,
         timestamp_str=timestamp_str,
-        confidence=confidence
+        confidence=confidence,
+        force=force
     )
 
 # --------------------------
@@ -156,7 +157,8 @@ def detect_accident(video_source=0):
                     send_telegram_alert(
                         severity=severity_str,
                         timestamp_str=time.strftime('%Y-%m-%d %H:%M:%S'),
-                        confidence=conf
+                        confidence=conf,
+                        force=True
                     )
                     alert_sent_live = True
 
