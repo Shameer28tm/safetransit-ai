@@ -697,3 +697,15 @@ input,select,textarea,.form-control { color:#0f172a!important; background:#fff!i
 .audio-fallback { margin-top:12px; padding:12px; background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; border-radius:8px; }
 #client-preview-player { width:100%; max-height:65vh; background:#0f172a; }
 @media(max-width:768px){.container{padding:0 14px}.main-content{padding-top:20px}.progress-meta{flex-direction:column}}
+
+
+/* Incident-triggered SOS panel */
+.incident-sos-banner {
+  display:flex; align-items:center; justify-content:space-between; gap:18px;
+  margin:18px 0; padding:18px 20px; border-radius:12px;
+  border:1px solid #fca5a5; border-left:5px solid #dc2626; background:#fff1f2;
+}
+.incident-sos-copy { display:flex; flex-direction:column; gap:5px; color:#7f1d1d; }
+.incident-sos-copy strong { font-size:1rem; letter-spacing:.04em; color:#b91c1c; }
+.incident-sos-copy span { font-size:.88rem; color:#7f1d1d; }
+@media(max-width:640px){.incident-sos-banner{align-items:stretch;flex-direction:column}}
